@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #define KB(x) ((x)*1024L)
 #define N 8
 
-void vector_sqrt(double *s, double *t, double *u, int n) {
+__global__ void vector_sqrt(double *s, double *t, double *u, int n) {
 	for(int i=0;i<n;i++) {
 		u[i] = sqrt(s[i]*s[i] + t[i]*t[i]);
 	}
@@ -15,6 +17,7 @@ int main(int argc, char *argv[])
 {
 	FILE *fpa,*fpb,*fpc,*fpd;
 	double *a,*b,*c,*d,*x;
+	double *c_d,*d_d,*x_d;
 	int n;
 	if(argc < 2) {
 		n = N;
@@ -38,11 +41,18 @@ int main(int argc, char *argv[])
 	c = (double*)malloc(sizeof(double)*n);
 	d = (double*)malloc(sizeof(double)*n);
 	x = (double*)malloc(sizeof(double)*n);
+	cudaMalloc(&c_d, sizeof(double)*n);
+	cudaMalloc(&d_d, sizeof(double)*n);
+	cudaMalloc(&x_d, sizeof(double)*n);
 	fpc = fopen("./double_a.bin", "r");
 	fpd = fopen("./double_b.bin", "r");
 	fread(c, sizeof(double), n, fpc);
 	fread(d, sizeof(double), n, fpd);
-	vector_sqrt(c,d,x,n);
+	cudaMemcpy(c_d, c, sizeof(double)*n, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_d, d, sizeof(double)*n, cudaMemcpyHostToDevice);
+	cudaMemcpy(x_d, x, sizeof(double)*n, cudaMemcpyHostToDevice);
+	vector_sqrt<<<2,128>>>(c_d,d_d,x_d,n);
+	cudaMemcpy(x, x_d, sizeof(double)*n, cudaMemcpyDeviceToHost);
 	for(int i=0;i<n;++i) {
 		printf("output: %8.3lf\n", x[i]);
 	}
@@ -52,6 +62,9 @@ int main(int argc, char *argv[])
 	free(c);
 	free(d);
 	free(x);
+	cudaFree(c_d);
+	cudaFree(d_d);
+	cudaFree(x_d);
 
 	fclose(fpc);
 	fclose(fpd);
