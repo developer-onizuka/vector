@@ -5,12 +5,12 @@
 #include <cuda_runtime.h>
 
 #define KB(x) ((x)*1024L)
-#define N 8
+#define N 8 
 
-__global__ void vector_sqrt(double *s, double *t, double *u, int n) {
-	for(int i=0;i<n;i++) {
-		u[i] = sqrt(s[i]*s[i] + t[i]*t[i]);
-	}
+__global__ void vector_sqrt(double *s, double *t, double *u) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	u[idx] = sqrt(s[idx]*s[idx] + t[idx]*t[idx]);
+	printf("idx:%d, blockId.x:%d, threadIdx.x:%d\n",idx, blockIdx.x, threadIdx.x); 
 }
 
 int main(int argc, char *argv[])
@@ -51,11 +51,18 @@ int main(int argc, char *argv[])
 	cudaMemcpy(c_d, c, sizeof(double)*n, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_d, d, sizeof(double)*n, cudaMemcpyHostToDevice);
 	cudaMemcpy(x_d, x, sizeof(double)*n, cudaMemcpyHostToDevice);
-	vector_sqrt<<<2,128>>>(c_d,d_d,x_d,n);
+
+	int blocksize = 512;
+	int gridsize = (n+(blocksize-1))/blocksize;
+	dim3 dimGrid(gridsize,1);
+	dim3 dimBlock(blocksize,1,1);	
+	vector_sqrt<<<dimGrid,dimBlock>>>(c_d,d_d,x_d);
+
 	cudaMemcpy(x, x_d, sizeof(double)*n, cudaMemcpyDeviceToHost);
 	for(int i=0;i<n;++i) {
 		printf("output: %8.3lf\n", x[i]);
 	}
+	/* printf("dimGrid:%d, dimBlock:%d\n", gridsize, blocksize); */
 
 	free(a);
 	free(b);
