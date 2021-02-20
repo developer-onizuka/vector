@@ -13,8 +13,8 @@ void vector_sqrt(double *s, double *t, double *u, int n) {
 
 int main(int argc, char *argv[])
 {
-	FILE *fpa,*fpb,*fpc,*fpd;
-	double *a,*b,*c,*d,*x;
+	FILE *fpa,*fpb,*fpc,*fpx,*fpy,*fpz;
+	double *a,*b,*c,*x,*y,*z;
 	int n;
 	if(argc < 2) {
 		n = N;
@@ -23,36 +23,45 @@ int main(int argc, char *argv[])
 	}
 	a = (double*)malloc(sizeof(double)*n);
 	b = (double*)malloc(sizeof(double)*n);
+	c = (double*)malloc(sizeof(double)*n);
 	for(int i=0;i<n;++i) {
 		a[i] = 3.0;
 		b[i] = 4.0;
+		c[i] = 0.0;
 	}
 
 	fpa = fopen("./double_a.bin", "wr");
 	fpb = fopen("./double_b.bin", "wr");
+	fpc = fopen("./double_c.bin", "wr");
 	fwrite(a, sizeof(double), n, fpa);
 	fwrite(b, sizeof(double), n, fpb);
+	fwrite(c, sizeof(double), n, fpc);
 	fclose(fpa);
 	fclose(fpb);
+	fclose(fpc);
 
-	c = (double*)malloc(sizeof(double)*n);
-	d = (double*)malloc(sizeof(double)*n);
 	x = (double*)malloc(sizeof(double)*n);
-	fpc = fopen("./double_a.bin", "r");
-	fpd = fopen("./double_b.bin", "r");
-	fread(c, sizeof(double), n, fpc);
-	fread(d, sizeof(double), n, fpd);
-	vector_sqrt(c,d,x,n);
+	y = (double*)malloc(sizeof(double)*n);
+	z = (double*)malloc(sizeof(double)*n);
+	fpx = fopen("./double_a.bin", "r");
+	fpy = fopen("./double_b.bin", "r");
+	fpz = fopen("./double_c.bin", "rw");
+	fread(x, sizeof(double), n, fpx);
+	fread(y, sizeof(double), n, fpy);
+	fread(z, sizeof(double), n, fpz);
+	vector_sqrt(x,y,z,n);
 	for(int i=0;i<n;++i) {
-		printf("output: %8.3lf\n", x[i]);
+		printf("output: %8.3lf\n", z[i]);
 	}
 
 	free(a);
 	free(b);
 	free(c);
-	free(d);
 	free(x);
+	free(y);
+	free(z);
 
-	fclose(fpc);
-	fclose(fpd);
+	fclose(fpx);
+	fclose(fpy);
+	fclose(fpz);
 }
