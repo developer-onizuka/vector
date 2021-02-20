@@ -10,14 +10,15 @@
 __global__ void vector_sqrt(double *s, double *t, double *u) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	u[idx] = sqrt(s[idx]*s[idx] + t[idx]*t[idx]);
-	printf("idx:%d, blockId.x:%d, threadIdx.x:%d\n",idx, blockIdx.x, threadIdx.x); 
+	/* printf("idx:%d, blockId.x:%d, threadIdx.x:%d\n",idx, blockIdx.x, threadIdx.x); */
 }
 
 int main(int argc, char *argv[])
 {
-	FILE *fpa,*fpb,*fpc,*fpd;
-	double *a,*b,*c,*d,*x;
-	double *c_d,*d_d,*x_d;
+	FILE *fpa,*fpb,*fpc,*fpx,*fpy,*fpz;
+	double *a,*b,*c;
+	double *x,*y,*z;
+	double *x_d,*y_d,*z_d;
 	int n;
 	if(argc < 2) {
 		n = N;
@@ -26,53 +27,65 @@ int main(int argc, char *argv[])
 	}
 	a = (double*)malloc(sizeof(double)*n);
 	b = (double*)malloc(sizeof(double)*n);
+	c = (double*)malloc(sizeof(double)*n);
 	for(int i=0;i<n;++i) {
 		a[i] = 3.0;
 		b[i] = 4.0;
+		c[i] = 0.0;
 	}
 
 	fpa = fopen("./double_a.bin", "wr");
 	fpb = fopen("./double_b.bin", "wr");
+	fpc = fopen("./double_c.bin", "wr");
 	fwrite(a, sizeof(double), n, fpa);
 	fwrite(b, sizeof(double), n, fpb);
+	fwrite(c, sizeof(double), n, fpc);
 	fclose(fpa);
 	fclose(fpb);
+	fclose(fpc);
 
-	c = (double*)malloc(sizeof(double)*n);
-	d = (double*)malloc(sizeof(double)*n);
 	x = (double*)malloc(sizeof(double)*n);
-	cudaMalloc(&c_d, sizeof(double)*n);
-	cudaMalloc(&d_d, sizeof(double)*n);
+	y = (double*)malloc(sizeof(double)*n);
+	z = (double*)malloc(sizeof(double)*n);
 	cudaMalloc(&x_d, sizeof(double)*n);
-	fpc = fopen("./double_a.bin", "r");
-	fpd = fopen("./double_b.bin", "r");
-	fread(c, sizeof(double), n, fpc);
-	fread(d, sizeof(double), n, fpd);
-	cudaMemcpy(c_d, c, sizeof(double)*n, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_d, d, sizeof(double)*n, cudaMemcpyHostToDevice);
+	cudaMalloc(&y_d, sizeof(double)*n);
+	cudaMalloc(&z_d, sizeof(double)*n);
+
+	fpx = fopen("./double_a.bin", "r");
+	fpy = fopen("./double_b.bin", "r");
+	fpz = fopen("./double_c.bin", "rw");
+
+	fread(x, sizeof(double), n, fpx);
+	fread(y, sizeof(double), n, fpy);
+	fread(z, sizeof(double), n, fpz);
+
 	cudaMemcpy(x_d, x, sizeof(double)*n, cudaMemcpyHostToDevice);
+	cudaMemcpy(y_d, y, sizeof(double)*n, cudaMemcpyHostToDevice);
+	cudaMemcpy(z_d, z, sizeof(double)*n, cudaMemcpyHostToDevice);
 
 	int blocksize = 512;
 	int gridsize = (n+(blocksize-1))/blocksize;
 	dim3 dimGrid(gridsize,1);
 	dim3 dimBlock(blocksize,1,1);	
-	vector_sqrt<<<dimGrid,dimBlock>>>(c_d,d_d,x_d);
+	vector_sqrt<<<dimGrid,dimBlock>>>(x_d,y_d,z_d);
 
-	cudaMemcpy(x, x_d, sizeof(double)*n, cudaMemcpyDeviceToHost);
+	cudaMemcpy(z, z_d, sizeof(double)*n, cudaMemcpyDeviceToHost);
 	for(int i=0;i<n;++i) {
-		printf("output: %8.3lf\n", x[i]);
+		printf("output: %8.3lf\n", z[i]);
 	}
 	/* printf("dimGrid:%d, dimBlock:%d\n", gridsize, blocksize); */
 
 	free(a);
 	free(b);
 	free(c);
-	free(d);
 	free(x);
-	cudaFree(c_d);
-	cudaFree(d_d);
+	free(y);
+	free(z);
 	cudaFree(x_d);
+	cudaFree(y_d);
+	cudaFree(z_d);
 
+	fclose(fpa);
+	fclose(fpb);
 	fclose(fpc);
-	fclose(fpd);
 }
