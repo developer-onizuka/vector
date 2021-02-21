@@ -44,9 +44,9 @@ int main(int argc, char *argv[])
 		c[i] = 0.0;
 	}
 
-	fpa = fopen("./double_a.bin", "wr");
-	fpb = fopen("./double_b.bin", "wr");
-	fpc = fopen("./double_c.bin", "wr");
+	fpa = fopen("./double_a.bin", "w");
+	fpb = fopen("./double_b.bin", "w");
+	fpc = fopen("./double_c.bin", "w");
 	fwrite(a, sizeof(double), n, fpa);
 	fwrite(b, sizeof(double), n, fpb);
 	fwrite(c, sizeof(double), n, fpc);

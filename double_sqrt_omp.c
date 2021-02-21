@@ -1,13 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 
 #define KB(x) ((x)*1024L)
 #define N 8
+#define NUM_THREADS 4
 
 void vector_sqrt(double *s, double *t, double *u, int n) {
-	for(int i=0;i<n;i++) {
-		u[i] = sqrt(s[i]*s[i] + t[i]*t[i]);
+	double ans[N] = {0.0};
+	omp_set_num_threads(NUM_THREADS);
+	#pragma omp parallel
+	{	int i, id;
+		id = omp_get_thread_num();
+		/* printf("id:%d\n",id); */
+	/* #pragma omp for */
+		for(int i=id; i<n; i=i+NUM_THREADS) { 
+		/* for(int i=0; i<n; i++) { */
+			u[i] = sqrt(s[i]*s[i] + t[i]*t[i]);
+			printf("id:%d, i:%d, u[i]:%8.3lf\n", id, i, u[i]);
+		}
 	}
 }
 
@@ -49,11 +61,13 @@ int main(int argc, char *argv[])
 	fread(x, sizeof(double), n, fpx);
 	fread(y, sizeof(double), n, fpy);
 	fread(z, sizeof(double), n, fpz);
+
 	vector_sqrt(x,y,z,n);
 	for(int i=0;i<n;++i) {
 		printf("output: %8.3lf\n", z[i]);
 	}
-	fwrite(z, sizeof(double), n, fpz);
+	int ret = fwrite(z, sizeof(double), n, fpz);
+	printf("ret:%d\n",ret);
 
 	free(a);
 	free(b);
