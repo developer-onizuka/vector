@@ -34,9 +34,9 @@ int main(int argc, char *argv[])
 		c[i] = 0.0;
 	}
 
-	fpa = fopen("./double_a.bin", "wr");
-	fpb = fopen("./double_b.bin", "wr");
-	fpc = fopen("./double_c.bin", "wr");
+	fpa = fopen("./double_a.bin", "w");
+	fpb = fopen("./double_b.bin", "w");
+	fpc = fopen("./double_c.bin", "w");
 	fwrite(a, sizeof(double), n, fpa);
 	fwrite(b, sizeof(double), n, fpb);
 	fwrite(c, sizeof(double), n, fpc);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
 	fpx = fopen("./double_a.bin", "r");
 	fpy = fopen("./double_b.bin", "r");
-	fpz = fopen("./double_c.bin", "rw");
+	fpz = fopen("./double_c.bin", "w+");
 
 	fread(x, sizeof(double), n, fpx);
 	fread(y, sizeof(double), n, fpy);
@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 		printf("output: %8.3lf\n", z[i]);
 	}
 	/* printf("dimGrid:%d, dimBlock:%d\n", gridsize, blocksize); */
+	fwrite(z, sizeof(double), n, fpz);
 
 	free(a);
 	free(b);
